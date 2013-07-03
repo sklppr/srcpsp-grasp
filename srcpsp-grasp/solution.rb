@@ -1,3 +1,5 @@
+# encoding: utf-8
+
 module SRCPSP_GRASP
   
   class Solution
