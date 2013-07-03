@@ -8,8 +8,9 @@ require "srcpsp-grasp/solver"
 
 module SRCPSP_GRASP
   
-  def self.solve(file)
-    # @TODO
+  # Shortcut to read project from a file and solve it.
+  def self.solve(file, options={})
+    Solver.new(options).solve(Project.from_file(file))
   end
   
 end
