@@ -23,7 +23,8 @@ module SRCPSP_GRASP
     end
 
     # Generates schedule from activity list using a serial SGS.
-    def evaluate!
+    # @FIXME: Makespan is calculated to be 0.
+    def calculate_makespan!
 
       # Clone the project's resources to be able to modify their capacity.
       resources = @project.resources.clone

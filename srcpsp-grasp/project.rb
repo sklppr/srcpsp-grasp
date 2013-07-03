@@ -17,8 +17,8 @@ module SRCPSP_GRASP
     end
     
     # Calculates latest finish times using the Triple algorithm.
-    # @FIXME: Distances are calculated to be -Infinity. Something is wrong!
-    def calculate_latest_finish_times
+    # @FIXME: Distances are calculated to be -Infinity.
+    def calculate_latest_finish_times!
 
       # Initialize distance matrix with negative infinity and 0 in the diagonal.
       n = @activities.size
@@ -92,7 +92,7 @@ module SRCPSP_GRASP
         end
 
         # Let the project calculate latest finish times.
-        project.calculate_latest_finish_times
+        project.calculate_latest_finish_times!
 
         # Return project.
         project

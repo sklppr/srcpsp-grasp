@@ -115,8 +115,8 @@ module SRCPSP_GRASP
     # Adds solution and calculates its makespan if necessary.
     def add_solution(solution)
 
-      # If necessary, evaluate the solution to estimate its makespan.
-      solution.evaluate! unless solution.makespan
+      # If necessary, calculate the solution's makespan.
+      solution.calculate_makespan! unless solution.makespan
 
       # Add solution to solution set.
       @solutions << solution
@@ -126,8 +126,8 @@ module SRCPSP_GRASP
     # Adds solution to the set if it's better than the currently worst solution.
     def add_solution_if_improvement(solution)
       
-      # If necessary, evaluate the solution to estimate its makespan.
-      solution.evaluate! unless solution.makespan
+      # If necessary, calculate the solution's makespan.
+      solution.calculate_makespan! unless solution.makespan
 
       # Sort existing solutions by makespan.
       @solutions.sort_by!(&:makespan)
