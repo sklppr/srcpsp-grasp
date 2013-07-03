@@ -22,7 +22,6 @@ module SRCPSP_GRASP
     end
     
     # Calculates latest finish times using the Triple algorithm.
-    # @FIXME: Distances are calculated to be -Infinity.
     def calculate_latest_finish_times!
 
       # Initialize distance matrix with negative infinity and 0 in the diagonal.
@@ -30,7 +29,11 @@ module SRCPSP_GRASP
       distances = Array.new(n) { |i| Array.new(n) { |j| i == j ? 0 : -Float::INFINITY } }
       
       # For all precedences (i,j) set the distance to the duration of i.
-      @activities.each { |a| a.successors.each { |j| distances[a.id][j] = a.duration } }
+      @activities.each do |activity|
+        activity.successors.each do |successor|
+          distances[activity.id][successor.id] = activity.duration
+        end
+      end
       
       # For all activities (use IDs):
       activities = @activities.collect(&:id)
@@ -89,11 +92,14 @@ module SRCPSP_GRASP
         
         end
 
-        # Map successors to predecessors.
+        # Replace successor indices with references.
         project.activities.each do |activity|
-          activity.successors.each do |successor_id|
-            project.activities[successor_id].predecessors << activity.id
-          end
+          activity.successors = activity.successors.map { |successor_id| project.activities[successor_id] }
+        end
+
+        # Add activities as predecessor to their successors.
+        project.activities.each do |activity|
+          activity.successors.each { |successor| project.activities[successor.id].predecessors << activity }
         end
 
         # Let the project calculate latest finish times.

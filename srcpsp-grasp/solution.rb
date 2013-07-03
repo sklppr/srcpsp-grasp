@@ -28,7 +28,6 @@ module SRCPSP_GRASP
     end
 
     # Generates schedule from activity list using a serial SGS.
-    # @FIXME: Makespan is calculated to be 0.
     def calculate_makespan!
 
       # Keep track of scheduled activities.
@@ -42,11 +41,11 @@ module SRCPSP_GRASP
 
         # Determine earliest start of activity:
         # 1. ES <= latest finish of all predecessors. (default rule of serial SGS)
-        time = activity.predecessors.collect do |predecessor_id|
-          schedule[predecessor_id] + @project.activities[predecessor_id].duration
-        end.max || 0 # If activity has no predecessors, its earliest start is 0.
         # 2. ES must be <= latest start of all scheduled activities. (activitiy-based priority rule)
-        time = [time, (schedule.max || 0)].max # If schedule is empty, the latest start is 0.
+        # 3. If activity has no predecessors, its earliest start is 0.
+        # 4. If schedule is empty, the latest start in the schedule is 0.
+        finish_times = activity.predecessors.collect { |predecessor| schedule[predecessor.id] + predecessor.duration }
+        time = [(finish_times.max || 0), (schedule.reject(&:nil?).max || 0)].max
 
         # Next, determine point in time where the activity is resource feasible.
         # The way this solution was generated already ensures time feasibility.
