@@ -2,20 +2,27 @@ module SRCPSP_GRASP
   
   class Solver
 
+    # Shortcut to instantiate a solver and solve a project.
+    def self.solve(project, options={})
+      self.new(options).solve(project)
+    end
+
     # Initialize with a project and options.
-    def initialize(project, options={})
-      @project = project
+    def initialize(options={})
       @n_solutions = options[:n_solutions] || 50
       @p_lft = options[:p_lft] || 0
       @p_random = options[:p_random] || 0
       @p_inverse = options[:p_inverse] || 0
       @min_iterations = options[:min_iterations] || 1
-      @max_iterations = options[:max_iterations] || (@project.activities.size/10).to_i
+      @max_iterations = options[:max_iterations] || 10
     end
   
-    # Finds a maximally good solution for the given project and options3.
-    def find_solution
+    # Finds a maximally good solution for the given project.
+    def solve(project)
       
+      # Store project.
+      @project = project
+
       # Start with an empty solution set.
       @solutions = []
 
