@@ -9,7 +9,7 @@ module SRCPSP_GRASP
       @p_random = options[:p_random] || 0
       @p_inverse = options[:p_inverse] || 0
       @min_iterations = options[:min_iterations] || 1
-      @max_iterations = options[:max_iterations] || (@project.size/10).to_i
+      @max_iterations = options[:max_iterations] || (@project.activities.size/10).to_i
     end
   
     # Finds best solution for project.
@@ -29,7 +29,7 @@ module SRCPSP_GRASP
       iterations = 0
   
       # Repeat for activity count.
-      @project.size.times do
+      @project.activities.size.times do
   
         # Determine activities with all predecessors already in solution.
         eligible_activities = @project.activities.select do |a|
