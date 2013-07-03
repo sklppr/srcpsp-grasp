@@ -2,6 +2,11 @@ module SRCPSP_GRASP
   
   class Solver
 
+    # Shortcut to load a project from a file and solve it.
+    def self.solve_file(file, options={})
+      self.solve(Project.from_file(file), options)
+    end
+
     # Shortcut to instantiate a solver and solve a project.
     def self.solve(project, options={})
       self.new(options).solve(project)
