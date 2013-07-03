@@ -14,6 +14,11 @@ module SRCPSP_GRASP
     def <<(activity)
       @activities << activity
     end
+
+    # Shortcut to test if activity is included.
+    def include?(activity)
+      @activities.include?(activity)
+    end
   
     # Returns solution with inverted activity list.
     def invert
@@ -25,9 +30,6 @@ module SRCPSP_GRASP
     # Generates schedule from activity list using a serial SGS.
     # @FIXME: Makespan is calculated to be 0.
     def calculate_makespan!
-
-      # Clone the project's resources to be able to modify their capacity.
-      resources = @project.resources.clone
 
       # Keep track of scheduled activities.
       scheduled_activities = []

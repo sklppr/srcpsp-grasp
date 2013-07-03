@@ -15,6 +15,11 @@ module SRCPSP_GRASP
       @activities = []
       @resources = []
     end
+
+    # Shortcut to retrieve project size.
+    def size
+      @activities.size
+    end
     
     # Calculates latest finish times using the Triple algorithm.
     # @FIXME: Distances are calculated to be -Infinity.

@@ -58,17 +58,18 @@ module SRCPSP_GRASP
   
       # Create new solution and pass reference to project.
       solution = Solution.new(@project)
+      solution << @project.activities.first
   
       # Reference and number of iterations to keep the same reference for.
       reference = nil
       iterations = 0
 
       # Repeat for activity count.
-      @project.activities.size.times do
+      @project.size.times do
   
         # Determine activities with all predecessors already in solution.
-        eligible_activities = @project.activities.select do |a|
-          a.predecessors.all? { |p| solution.activities.include?(p) }
+        eligible_activities = @project.activities.select do |activity|
+          activity.predecessors.all? { |predecessor_id| solution.include?(@project.activities[predecessor_id]) }
         end
   
         # Count down the number of iterations.
