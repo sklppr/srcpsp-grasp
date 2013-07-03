@@ -1,14 +1,11 @@
 module SRCPSP_GRASP
-  
-  # An activity has an ID, a duration, resource usage and successors.
+
   # `resource_usage` will be an array with resource IDs as indices and usages as values.
   # `predecessors` and `successors` will be arrays with activity IDs.
-  Activity = Struct.new :id, :duration, :resource_usage, :predecessors, :successors
+  Activity = Struct.new :id, :duration, :resource_usage, :predecessors, :successors, :latest_finish_time
   
-  # A resource has an ID and a capacity.
   Resource = Struct.new :id, :capacity
   
-  # A project encapsulates activities and resources.
   class Project
     
     attr_accessor :activities, :resources
@@ -19,6 +16,38 @@ module SRCPSP_GRASP
       @resources = []
     end
     
+    # Calculates latest finish times using the Triple algorithm.
+    # @FIXME: Distances are calculated to be -Infinity. Something is wrong!
+    def calculate_latest_finish_times
+
+      # Initialize distance matrix with negative infinity and 0 in the diagonal.
+      n = @activities.size
+      distances = Array.new(n) { |i| Array.new(n) { |j| i == j ? 0 : -Float::INFINITY } }
+      
+      # For all precedences (i,j) set the distance to the duration of i.
+      @activities.each { |a| a.successors.each { |j| distances[a.id][j] = a.duration } }
+      
+      # For all activities (use IDs):
+      activities = @activities.collect(&:id)
+      activities.each do |a|
+
+        # For all pairs (i,j) not including a ...
+        ij = activities - [a]
+        ij.each do |i|
+          # ... and a cost d[i,a] > negative infinity:
+          next if distances[i][a] == -Float::INFINITY
+
+          # If the path i->a->j is longer than i->j until now, set i->a->j as new distance between i and j.
+          ij.each { |j| distances[i][j] = [ distances[i][j], distances[i][a] + distances[a][j] ].max }
+
+        end
+      end
+      
+      # Set latest finish times by adding the duration to the latest start time (LSTi = -d[i][0]).
+      @activities.each { |a| a.latest_finish_time = a.duration - distances[a.id][0] }
+
+    end
+
     # Reads project from a PSPLIB file (.RCP).
     def self.from_file(file)
       
@@ -61,7 +90,10 @@ module SRCPSP_GRASP
             project.activities[successor_id].predecessors << activity.id
           end
         end
-        
+
+        # Let the project calculate latest finish times.
+        project.calculate_latest_finish_times
+
         # Return project.
         project
         
