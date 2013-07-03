@@ -34,7 +34,7 @@ module SRCPSP_GRASP
       # Generate first batch of solutions with special p_lft and p_random.
       p_lft, p_random = @p_lft, @p_random
       @p_lft, @p_random = 0.95, 0.05
-      @n_solutions.times { @solutions << generate_solution }
+      @n_solutions.times { add_solution generate_solution }
       @p_lft, @p_random = p_lft, p_random
 
       # Generate new solutions until satisfied.
@@ -42,12 +42,9 @@ module SRCPSP_GRASP
         
         # Generate new solution.
         solution = generate_solution
-        
-        # Evaluate the solution to estimate its makespan.
-        solution.evaluate!
 
         # Add solution if better than worst in current set.
-        add_solution_if_improved(solution)
+        add_solution_if_improvement(solution)
 
       end
       
@@ -62,9 +59,10 @@ module SRCPSP_GRASP
       # Create new solution and pass reference to project.
       solution = Solution.new(@project)
   
-      # Number of iterations to keep the same reference for.
+      # Reference and number of iterations to keep the same reference for.
+      reference = nil
       iterations = 0
-  
+
       # Repeat for activity count.
       @project.activities.size.times do
   
@@ -80,13 +78,13 @@ module SRCPSP_GRASP
           # Select a new reference.
           reference = random_reference
           # Randomly pick a new iteration count.
-          iterations = [@min_iterations, @min_iterations].sample
+          iterations = [@min_iterations, @max_iterations].sample
         end
-  
+
         # Select activity according to reference.
         activity = case reference
           # Activity with latest finish time.
-          when :lft then eligible_activities.sort_by(&:lft).last
+          when :lft then eligible_activities.sort_by(&:latest_finish_time).last
           # Random activity from eligible set.
           when :random then eligible_activities.sample
           # Next best activity according to the reference.
@@ -97,22 +95,40 @@ module SRCPSP_GRASP
         solution << activity
 
       end
+
+      # Return solution.
+      solution
   
     end
   
     # Randomly selects a reference, either a Solution or :lft or :random.
     def random_reference
+      # Draw a random number and compare it to probabilities.
       case Random.rand
-        when 0..@p_lft then :lft
-        when 0..(@p_lft + @p_random) then :random
-        when 0..(@p_lft + @p_random + @p_inverse) then @solutions.sample.invert
-        else @solutions.sample
+        when 0..@p_lft then :lft # Indicate that activity with latest finish time should be chosen.
+        when 0..(@p_lft + @p_random) then :random # Indicate that a random activity should be chosen.
+        when 0..(@p_lft + @p_random + @p_inverse) then @solutions.sample.invert # Return inverted sample.
+        else @solutions.sample # Return random sample from solution set.
       end
     end
 
+    # Adds solution and calculates its makespan if necessary.
+    def add_solution(solution)
+
+      # If necessary, evaluate the solution to estimate its makespan.
+      solution.evaluate! unless solution.makespan
+
+      # Add solution to solution set.
+      @solutions << solution
+
+    end
+
     # Adds solution to the set if it's better than the currently worst solution.
-    def add_solution_if_improved(solution)
+    def add_solution_if_improvement(solution)
       
+      # If necessary, evaluate the solution to estimate its makespan.
+      solution.evaluate! unless solution.makespan
+
       # Sort existing solutions by makespan.
       @solutions.sort_by!(&:makespan)
 

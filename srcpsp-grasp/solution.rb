@@ -29,7 +29,7 @@ module SRCPSP_GRASP
       resources = @project.resources.clone
 
       # Keep track of scheduled activities.
-      scheduled_activities
+      scheduled_activities = []
 
       # The generated schedule will contain start times with activity IDs as indices.
       schedule = []
@@ -49,7 +49,7 @@ module SRCPSP_GRASP
         # The way this solution was generated already ensures time feasibility.
 
         # Start by testing wether it's already feasible. Otherwise ...
-        unless activity_is_resource_feasible?(scheduled_activities, schedule, project, time)
+        unless activity_is_resource_feasible?(activity, schedule, time, scheduled_activities)
 
           # Collect finish times of ongoing activities, sorted ascending.
           finish_times = scheduled_activities.select do |activity|
@@ -60,7 +60,7 @@ module SRCPSP_GRASP
 
           # Test feasibility at each finish time.
           finish_times.each do |finish_time|
-            time = finish_time and break if activity_is_resource_feasible?(schedule, project, finish_time)
+            time = finish_time and break if activity_is_resource_feasible?(activity, schedule, time, scheduled_activities)
           end
 
         end
@@ -77,7 +77,7 @@ module SRCPSP_GRASP
     end
 
     # Tests if an activity is resource feasible at a certain point in time.
-    def activity_is_resource_feasible?(scheduled_activities, schedule, project, time)
+    def activity_is_resource_feasible?(activity, schedule, time, scheduled_activities)
 
       # Determine ongoing activities and add potential activity.
       activities = scheduled_activities.select do |activity|
@@ -85,7 +85,7 @@ module SRCPSP_GRASP
       end << activity
 
       # Return wether capacity of each resource is >= sum of resource usage by all activities.
-      project.resources.all? do |resource|
+      @project.resources.all? do |resource|
         resource.capacity >= activities.inject(0) { |sum, activity| sum + activity.resource_usage[resource.id] }
       end
 
