@@ -1,3 +1,5 @@
+# encoding: utf-8
+
 module SRCPSP_GRASP
 
   # `resource_usage` will be an array with resource IDs as indices and usages as values.
