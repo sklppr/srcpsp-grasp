@@ -69,7 +69,7 @@ module SRCPSP_GRASP
   
         # Determine activities with all predecessors already in solution.
         eligible_activities = @project.activities.select do |activity|
-          activity.predecessors.all? { |predecessor_id| solution.include?(@project.activities[predecessor_id]) }
+          activity.predecessors.all? { |predecessor| solution.include?(predecessor) }
         end
   
         # Count down the number of iterations.
