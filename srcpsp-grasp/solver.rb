@@ -75,8 +75,8 @@ module SRCPSP_GRASP
 
         # Select activity according to reference.
         activity = case reference
-          # Activity with latest finish time.
-          when :lft then eligible_activities.sort_by(&:latest_finish_time).last
+          # Activity with smallest latest finish time.
+          when :lft then eligible_activities.sort_by(&:latest_finish_time).first
           # Random activity from eligible set.
           when :random then eligible_activities.sample
           # Next best activity according to the reference.
