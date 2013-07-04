@@ -4,7 +4,7 @@ module SRCPSP_GRASP
   
   class Solution
   
-    attr_accessor :activities, :makespan
+    attr_accessor :activities
     
     # Initialize with a project.
     def initialize(project)
@@ -29,8 +29,13 @@ module SRCPSP_GRASP
       solution
     end
 
-    # Generates schedule from activity list using a serial SGS.
-    def calculate_makespan!
+    # Returns makespan and calculates it first if necessary.
+    def makespan
+      @makespan || calculate_makespan
+    end
+
+    # Calculates makespan by generating a schedule from activity list (serial SGS).
+    def calculate_makespan
 
       # Keep track of scheduled activities.
       scheduled_activities = []
