@@ -2,9 +2,10 @@
 
 $:.unshift File.dirname(__FILE__)
 
+require "srcpsp-grasp/solver"
 require "srcpsp-grasp/project"
 require "srcpsp-grasp/solution"
-require "srcpsp-grasp/solver"
+require "srcpsp-grasp/distribution"
 
 module SRCPSP_GRASP
   

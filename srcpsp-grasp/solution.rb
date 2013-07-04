@@ -3,9 +3,6 @@
 module SRCPSP_GRASP
   
   class Solution
-
-    # Available distributions to calculate the expected makespan.
-    DISTRIBUTIONS = [ :uniform_1, :uniform_2, :exponential, :beta_1, :beta_2 ]
   
     attr_accessor :activities
     
@@ -18,7 +15,7 @@ module SRCPSP_GRASP
       # Number of replications for calculating the expected makespan.
       @n_replications = options[:n_replications] || 10
       # Probability distribution to use for calculating the expected makespan.
-      @distribution = options[:distribution] || DISTRIBUTIONS.first
+      @distribution = options[:distribution] || :none
     end
   
     # Shortcut to add an activity.
@@ -51,7 +48,7 @@ module SRCPSP_GRASP
       n_replications.times do
 
         # Draw activity durations from given distribution.
-        activity_durations = @activities.collect(&:duration)
+        activity_durations = @activities.collect { |activity| Distribution.send(@distribution, activity.duration) }
 
         # Calculate makespan for these activity durations.
         makespans << calculate_makespan(activity_durations)
