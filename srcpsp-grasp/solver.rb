@@ -26,7 +26,7 @@ module SRCPSP_GRASP
       # Generate first batch of solutions with special p_lft and p_random.
       p_lft, p_random = @p_lft, @p_random
       @p_lft, @p_random = 0.95, 0.05
-      @n_solutions.times { add_solution generate_solution }
+      @n_solutions.times { @solutions << generate_solution }
       @p_lft, @p_random = p_lft, p_random
 
       # Generate new solutions until satisfied.
@@ -104,22 +104,8 @@ module SRCPSP_GRASP
       end
     end
 
-    # Adds solution and calculates its makespan if necessary.
-    def add_solution(solution)
-
-      # If necessary, calculate the solution's makespan.
-      solution.calculate_makespan! unless solution.makespan
-
-      # Add solution to solution set.
-      @solutions << solution
-
-    end
-
     # Adds solution to the set if it's better than the currently worst solution.
     def add_solution_if_improvement(solution)
-      
-      # If necessary, calculate the solution's makespan.
-      solution.calculate_makespan! unless solution.makespan
 
       # Sort existing solutions by makespan.
       @solutions.sort_by!(&:makespan)
