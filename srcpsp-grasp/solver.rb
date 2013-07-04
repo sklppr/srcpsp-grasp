@@ -6,12 +6,22 @@ module SRCPSP_GRASP
 
     # Initialize with a project and options.
     def initialize(options={})
-      @n_solutions = options[:n_solutions] || 50
+      # Number of solutions to keep in the solution set.
+      @solution_set_size = options[:solution_set_size] || 10
+      # Maximum number of solutions to generate, including initial batch.
+      @max_solutions = options[:max_solutions] || 100
+      # Maximum number of solutions to generate without improvement, not used by default.
+      @max_unsuccessful_solutions = options[:max_unsuccessful_solutions] || @max_solutions
+      # Probability of choosing activity by latest finish time.
       @p_lft = options[:p_lft] || 0
+      # Probability of choosing activity randomly.
       @p_random = options[:p_random] || 0
+      # Probability of inverting the reference solution.
       @p_inverse = options[:p_inverse] || 0
-      @min_iterations = options[:min_iterations] || 1
-      @max_iterations = options[:max_iterations] || 10
+      # Minimum number of iterations to keep a reference for.
+      @min_reference_iterations = options[:min_reference_iterations] || 1
+      # Maximum number of iterations to keep a reference for.
+      @max_reference_iterations = options[:max_reference_iterations] || 10
     end
   
     # Finds a maximally good solution for the given project.
@@ -26,17 +36,29 @@ module SRCPSP_GRASP
       # Generate first batch of solutions with special p_lft and p_random.
       p_lft, p_random = @p_lft, @p_random
       @p_lft, @p_random = 0.95, 0.05
-      @n_solutions.times { @solutions << generate_solution }
+      @solution_set_size.times { @solutions << generate_solution }
       @p_lft, @p_random = p_lft, p_random
 
-      # Generate new solutions until satisfied.
-      100.times do
+      # Initialize solution counters, include solution set size in total solution count.
+      n_solutions = @solution_set_size
+      n_unsuccessful_solutions = 0
+
+      # Generate solutions until the limit of either total or unsuccessful solutions is reached.
+      until n_unsuccessful_solutions == @max_unsuccessful_solutions || n_solutions == @max_solutions
         
         # Generate new solution.
         solution = generate_solution
 
         # Add solution if better than worst in current set.
-        add_solution_if_improvement(solution)
+        # Reset or increment unsuccessful solutions counter accordingly
+        if add_solution_if_improvement(solution)
+          n_unsuccessful_solutions = 0
+        else
+          n_unsuccessful_solutions += 1
+        end
+
+        # Increment total solution counter.
+        n_solutions += 1
 
       end
       
@@ -70,7 +92,7 @@ module SRCPSP_GRASP
           # Select a new reference.
           reference = random_reference
           # Randomly pick a new iteration count.
-          iterations = [@min_iterations, @max_iterations].sample
+          iterations = [@min_reference_iterations, @max_reference_iterations].sample
         end
 
         # Select activity according to reference.
@@ -105,6 +127,7 @@ module SRCPSP_GRASP
     end
 
     # Adds solution to the set if it's better than the currently worst solution.
+    # Return wether the solution was added or now.
     def add_solution_if_improvement(solution)
 
       # Sort existing solutions by makespan.
@@ -114,6 +137,9 @@ module SRCPSP_GRASP
       if solution.makespan < @solutions.last.makespan
         @solutions.delete @solutions.last
         @solutions << solution
+        true
+      else
+        false
       end
 
     end
