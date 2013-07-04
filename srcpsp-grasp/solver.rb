@@ -6,6 +6,8 @@ module SRCPSP_GRASP
 
     # Initialize with a project and options.
     def initialize(options={})
+      # Store options to pass them on to solutions.
+      @options = options
       # Number of solutions to keep in the solution set.
       @solution_set_size = options[:solution_set_size] || 10
       # Maximum number of solutions to generate, including initial batch.
@@ -45,13 +47,10 @@ module SRCPSP_GRASP
 
       # Generate solutions until the limit of either total or unsuccessful solutions is reached.
       until n_unsuccessful_solutions == @max_unsuccessful_solutions || n_solutions == @max_solutions
-        
-        # Generate new solution.
-        solution = generate_solution
 
-        # Add solution if better than worst in current set.
+        # Generate a new solution and add it if better than worst in current set.
         # Reset or increment unsuccessful solutions counter accordingly
-        if add_solution_if_improvement(solution)
+        if add_solution_if_improvement(generate_solution)
           n_unsuccessful_solutions = 0
         else
           n_unsuccessful_solutions += 1
@@ -70,8 +69,8 @@ module SRCPSP_GRASP
     # Generate random solution.
     def generate_solution
   
-      # Create new solution and pass reference to project.
-      solution = Solution.new(@project)
+      # Create new solution and pass project and options.
+      solution = Solution.new(@project, @options)
   
       # Reference and number of iterations to keep the same reference for.
       reference = nil
@@ -130,11 +129,11 @@ module SRCPSP_GRASP
     # Return wether the solution was added or now.
     def add_solution_if_improvement(solution)
 
-      # Sort existing solutions by makespan.
-      @solutions.sort_by!(&:makespan)
+      # Sort existing solutions by expected makespan.
+      @solutions.sort_by!(&:expected_makespan)
 
       # Add it to the set if it's better than the currently worst solution.
-      if solution.makespan < @solutions.last.makespan
+      if solution.expected_makespan < @solutions.last.expected_makespan
         @solutions.delete @solutions.last
         @solutions << solution
         true
@@ -144,11 +143,11 @@ module SRCPSP_GRASP
 
     end
   
-    # Returns solution with minimal makespan.
+    # Returns solution with minimal expected makespan.
     def best_solution
 
-      # Sort existing solutions by makespan.
-      @solutions.sort_by!(&:makespan)
+      # Sort existing solutions by expected makespan.
+      @solutions.sort_by!(&:expected_makespan)
 
       # First solution is the best one.
       @solutions.first
