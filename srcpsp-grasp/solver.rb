@@ -80,7 +80,7 @@ module SRCPSP_GRASP
           # Random activity from eligible set.
           when :random then eligible_activities.sample
           # Next best activity according to the reference.
-          else reference.activities.first { |a| eligible_activities.include?(a) }
+          else reference.activities.find { |a| eligible_activities.include?(a) }
         end
   
         # Add activity to solution.
