@@ -3,13 +3,22 @@
 module SRCPSP_GRASP
   
   class Solution
+
+    # Available distributions to calculate the expected makespan.
+    DISTRIBUTIONS = [ :uniform_1, :uniform_2, :exponential, :beta_1, :beta_2 ]
   
     attr_accessor :activities
     
     # Initialize with a project.
-    def initialize(project)
+    def initialize(project, options)
+      # Reference to original project.
       @project = project
+      # Activity list.
       @activities = []
+      # Number of replications for calculating the expected makespan.
+      @n_replications = options[:n_replications] || 10
+      # Probability distribution to use for calculating the expected makespan.
+      @distribution = options[:distribution] || DISTRIBUTIONS.first
     end
   
     # Shortcut to add an activity.
@@ -29,13 +38,33 @@ module SRCPSP_GRASP
       solution
     end
 
-    # Returns makespan and calculates it first if necessary.
-    def makespan
-      @makespan || calculate_makespan
+    # Returns expected makespan and calculates it first if necessary.
+    def expected_makespan
+      @expected_makespan || calculate_expected_makespan(@n_replications, @distribution)
     end
 
-    # Calculates makespan by generating a schedule from activity list (serial SGS).
-    def calculate_makespan
+    # Calculates expected makespan by generating a schedule from activity list (serial SGS).
+    def calculate_expected_makespan(n_replications, distribution)
+
+      # Collect makespans for given number of replications.
+      makespans = []
+      n_replications.times do
+
+        # Draw activity durations from given distribution.
+        activity_durations = @activities.collect(&:duration)
+
+        # Calculate makespan for these activity durations.
+        makespans << calculate_makespan(activity_durations)
+
+      end
+
+      # Set expected makespan to be the average of collected makespans.
+      @expected_makespan = makespans.inject(:+) / makespans.size
+
+    end
+
+    # Calculates makespan for given activity durations by generating a schedule from activity list (serial SGS).
+    def calculate_makespan(activity_durations)
 
       # Keep track of scheduled activities.
       scheduled_activities = []
@@ -51,25 +80,25 @@ module SRCPSP_GRASP
         # 2. ES must be <= latest start of all scheduled activities. (activitiy-based priority rule)
         # 3. If activity has no predecessors, its earliest start is 0.
         # 4. If schedule is empty, the latest start in the schedule is 0.
-        finish_times = activity.predecessors.collect { |predecessor| schedule[predecessor.id] + predecessor.duration }
+        finish_times = activity.predecessors.collect { |predecessor| schedule[predecessor.id] + activity_durations[predecessor.id] }
         time = [(finish_times.max || 0), (schedule.reject(&:nil?).max || 0)].max
 
         # Next, determine point in time where the activity is resource feasible.
         # The way this solution was generated already ensures time feasibility.
 
         # Start by testing wether it's already feasible. Otherwise ...
-        unless activity_is_resource_feasible?(activity, schedule, time, scheduled_activities)
+        unless activity_is_resource_feasible?(activity, activity_durations, schedule, scheduled_activities, time)
 
           # Collect finish times of ongoing activities, sorted ascending.
           finish_times = scheduled_activities.select do |activity|
-            schedule[activity.id] <= time && time < schedule[activity.id] + activity.duration
+            schedule[activity.id] <= time && time < schedule[activity.id] + activity_durations[activity.id]
           end.collect do |activity|
-            schedule[activity.id] + activity.duration
+            schedule[activity.id] + activity_durations[activity.id]
           end.sort
 
           # Test feasibility at each finish time.
           finish_times.each do |finish_time|
-            time = finish_time and break if activity_is_resource_feasible?(activity, schedule, time, scheduled_activities)
+            time = finish_time and break if activity_is_resource_feasible?(activity, activity_durations, schedule, scheduled_activities, time)
           end
 
         end
@@ -80,17 +109,17 @@ module SRCPSP_GRASP
 
       end
 
-      # Set makespan.
-      @makespan = schedule[@activities.last.id]
+      # Return resulting makespan.
+      schedule[@activities.last.id]
 
     end
 
     # Tests if an activity is resource feasible at a certain point in time.
-    def activity_is_resource_feasible?(activity, schedule, time, scheduled_activities)
+    def activity_is_resource_feasible?(activity, activity_durations, schedule, scheduled_activities, time)
 
       # Determine ongoing activities and add potential activity.
       activities = scheduled_activities.select do |activity|
-        schedule[activity.id] <= time && time < schedule[activity.id] + activity.duration
+        schedule[activity.id] <= time && time < schedule[activity.id] + activity_durations[activity.id]
       end << activity
 
       # Return wether capacity of each resource is >= sum of resource usage by all activities.
