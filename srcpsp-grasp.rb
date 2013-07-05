@@ -6,6 +6,7 @@ require "srcpsp-grasp/solver"
 require "srcpsp-grasp/project"
 require "srcpsp-grasp/solution"
 require "srcpsp-grasp/distribution"
+require "srcpsp-grasp/concurrency"
 
 module SRCPSP_GRASP
   
