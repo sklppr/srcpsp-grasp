@@ -4,7 +4,7 @@ module SRCPSP_GRASP
   
   class Solver
 
-    # Initialize with a project and options.
+    # Initializes solver with a project and options.
     def initialize(options={})
       # Store options to pass them on to solutions.
       @options = options
@@ -31,6 +31,9 @@ module SRCPSP_GRASP
       
       # Store project.
       @project = project
+
+      # Let the project calculate earliest/latest start/finish times.
+      @project.calculate_start_and_finish_times!
 
       # Start with an empty solution set.
       @solutions = []
@@ -97,7 +100,7 @@ module SRCPSP_GRASP
         # Select activity according to reference.
         activity = case reference
           # Activity with smallest latest finish time.
-          when :lft then eligible_activities.sort_by(&:latest_finish_time).first
+          when :lft then eligible_activities.sort_by(&:latest_finish).first
           # Random activity from eligible set.
           when :random then eligible_activities.sample
           # Next best activity according to the reference.

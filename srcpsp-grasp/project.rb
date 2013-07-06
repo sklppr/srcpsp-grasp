@@ -4,7 +4,8 @@ module SRCPSP_GRASP
 
   # `resource_usage` will be an array with resource IDs as indices and usages as values.
   # `predecessors` and `successors` will be arrays with activity IDs.
-  Activity = Struct.new :id, :duration, :resource_usage, :predecessors, :successors, :latest_finish_time
+  Activity = Struct.new :id, :duration, :resource_usage, :predecessors, :successors,
+    :earliest_start, :latest_start, :earliest_finish, :latest_finish
   
   Resource = Struct.new :id, :capacity
   
@@ -23,17 +24,17 @@ module SRCPSP_GRASP
       @activities.size
     end
     
-    # Calculates latest finish times using the Triple algorithm.
-    def calculate_latest_finish_times!
+    # Calculates earliest/latest start/finish times using the Triple algorithm.
+    def calculate_start_and_finish_times!
 
       # Initialize distance matrix with negative infinity and 0 in the diagonal.
       n = @activities.size
-      distances = Array.new(n) { |i| Array.new(n) { |j| i == j ? 0 : -Float::INFINITY } }
+      distance = Array.new(n) { |i| Array.new(n) { |j| i == j ? 0 : -Float::INFINITY } }
       
       # For all precedences (i,j) set the distance to the duration of i.
       @activities.each do |activity|
         activity.successors.each do |successor|
-          distances[activity.id][successor.id] = activity.duration
+          distance[activity.id][successor.id] = activity.duration
         end
       end
       
@@ -45,16 +46,21 @@ module SRCPSP_GRASP
         ij = activities - [a]
         ij.each do |i|
           # ... and a cost d[i,a] > negative infinity:
-          next if distances[i][a] == -Float::INFINITY
+          next if distance[i][a] == -Float::INFINITY
 
           # If the path i->a->j is longer than i->j until now, set i->a->j as new distance between i and j.
-          ij.each { |j| distances[i][j] = [ distances[i][j], distances[i][a] + distances[a][j] ].max }
+          ij.each { |j| distance[i][j] = [ distance[i][j], distance[i][a] + distance[a][j] ].max }
 
         end
       end
       
-      # Set latest finish times by adding the duration to the latest start time (LSTi = -d[i][0]).
-      @activities.each { |a| a.latest_finish_time = a.duration - distances[a.id][0] }
+      # Set earliest/latest start/finish times of each activity.
+      @activities.each do |a|
+        a.earliest_start = distance[0][a.id]
+        a.latest_start = -distance[a.id][0]
+        a.earliest_finish = a.earliest_start + a.duration
+        a.latest_finish = a.latest_start + a.duration
+      end
 
     end
 
@@ -103,9 +109,6 @@ module SRCPSP_GRASP
         project.activities.each do |activity|
           activity.successors.each { |successor| project.activities[successor.id].predecessors << activity }
         end
-
-        # Let the project calculate latest finish times.
-        project.calculate_latest_finish_times!
 
         # Return project.
         project
