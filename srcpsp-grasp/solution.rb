@@ -8,6 +8,8 @@ module SRCPSP_GRASP
     
     # Initialize with a project.
     def initialize(project, options)
+      # Store options to pass on to cloned solutions.
+      @options = options
       # Reference to original project.
       @project = project
       # Activity list.
@@ -30,8 +32,8 @@ module SRCPSP_GRASP
   
     # Returns solution with inverted activity list.
     def invert
-      solution = self.clone
-      solution.activities.reverse!
+      solution = Solution.new(@project, @options)
+      solution.activities = @activities.reverse
       solution
     end
 
@@ -73,8 +75,8 @@ module SRCPSP_GRASP
       @activities.each do |activity|
 
         # Determine earliest start of activity:
-        # 1. ES <= latest finish of all predecessors. (default rule of serial SGS)
-        # 2. ES must be <= latest start of all scheduled activities. (activitiy-based priority rule)
+        # 1. ES >= latest finish of all predecessors. (default rule of serial SGS)
+        # 2. ES must be >= latest start of all scheduled activities. (activitiy-based priority rule)
         # 3. If activity has no predecessors, its earliest start is 0.
         # 4. If schedule is empty, the latest start in the schedule is 0.
         finish_times = activity.predecessors.collect { |predecessor| schedule[predecessor.id] + activity_durations[predecessor.id] }
