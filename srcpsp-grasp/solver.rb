@@ -80,7 +80,7 @@ module SRCPSP_GRASP
       iterations = 0
 
       # Repeat for activity count.
-      @project.size.times do
+      @project.activities.size.times do
   
         # Determine activities that are not yet part of the solution with all predecessors already in solution.
         eligible_activities = (@project.activities - solution.activities).select do |activity|
