@@ -20,6 +20,5 @@ module SRCPSP_GRASP
   def self.analyze(file, metrics=Analyzer::METRICS)
     Analyzer.new(Project.from_file(file)).analyze(metrics)
   end
-
   
 end

@@ -22,12 +22,12 @@ module SRCPSP_GRASP
     # Returns random variable from uniform distribution with interval [d-sqrt(d), d+sqrt(d)].
     def self.uniform_sqrt(d)
       sqrt_d = Math.sqrt(d)
-      uniform(d-sqrt_d, d+sqrt_d)
+      uniform(d - sqrt_d, d + sqrt_d)
     end
 
     # Returns random variable from uniform distribution with interval [0, 2*d].
     def self.uniform_2(d)
-      uniform(0, 2*d)
+      uniform(0, 2 * d)
     end
 
   end
