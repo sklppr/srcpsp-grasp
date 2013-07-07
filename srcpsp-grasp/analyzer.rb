@@ -4,7 +4,7 @@ module SRCPSP_GRASP
   
   class Analyzer
 
-    METRICS = [ :network_complexity, :critical_path_length, :resource_factor, :resource_strength ].freeze
+    METRICS = [ :network_complexity, :order_strength, :critical_path_length, :resource_factor, :resource_strength, :resource_constrainedness ].freeze
 
     # Initializes analyzer with a project.
     def initialize(project)
@@ -21,14 +21,17 @@ module SRCPSP_GRASP
     # Calculates network complexity.
     def network_complexity
       @network_complexity || = begin
-        # Initialize boolean adjacency matrix.
+        # Network complexity is the ratio of adjancies (occurences of true) to network size.
+        transitive_adjacency_matrix.flatten.count(true).to_f / @project.activities.size
+      end
+    end
+
+    # Calculates order strength.
+    def order_strength
+      @order_strength ||= begin
+        # Order strength is the ratio of adjacencies (occurences of true) to number of possible adjacencies.
         n = @project.activities.size
-        adjacency = Array.new(n) { Array.new(n) }
-        @project.activities.each { |a| a.successors.each { |s| adjacency[a.id][s.id] = true } }
-        # Calculate transitive reduction using the Triple algorithm.
-        n.times { |k| n.times { |i| n.times { |j| adjacency[i][j] = adjacency[i][j] && !( adjacency[i][k] && adjacency[k][j] ) } } }
-        # Complexity is the ratio of adjancies (occurences of true) to network size.
-        adjacency.flatten.count(true).to_f / n
+        transitive_adjacency_matrix.flatten.count(true).to_f / (n * (n - 1) / 2)
       end
     end
 
@@ -40,12 +43,11 @@ module SRCPSP_GRASP
     # Calculates resource factor.
     def resource_factor
       @resource_factor ||= begin
-        # Count how often an activity uses a resource.
-        resource_usage_count = @project.activities.inject(0) do |sum, activity|
+        # Resource factor is the average portion of resources requested per activity.
+        @project.activities.inject(0) do |sum, activity|
+          # Count how often an activity uses a resource.
           sum += activity.resource_usage.count { |r| r > 0 }
-        end
-        # Resource factor is ratio of usage count to activity count to resource count.
-        resource_usage_count.to_f / (@project.activities.size - 2) / @project.resources.size
+        end.to_f  / (@project.activities.size - 2) / @project.resources.size
       end
     end
 
@@ -53,11 +55,11 @@ module SRCPSP_GRASP
     def resource_strength
       @resource_strength ||= begin
         # Collect strength of all resources.
-        strengths = @project.resources.collect do |r|
+        strength = @project.resources.collect do |r|
           # Determine maximum resource usage.
           max_usage = @project.activities.collect do |i|
-            # For all activities i, add up resource usage of each j (except source and sink) that will run concurrently with i.
-            (@project.activities - [@project.activities.first, @project.activities.last]).inject(0) do |sum, j|
+            # Add up resource usage of i and all other activities j that will run concurrently with i.
+            (@project.activities - [i]).inject(i.resource_usage[r.id]) do |sum, j|
               sum + if (j.earliest_start...j.earliest_finish).include?(i.earliest_start) then j.resource_usage[r.id] else 0 end
             end
           end.max
@@ -66,8 +68,35 @@ module SRCPSP_GRASP
           # Resource strength is difference between buffer and variance.
           (r.capacity - min_usage).to_f / (max_usage - min_usage)
         end
-        # Return averall (= average) resource strength, exclude NaN elements.
-        strengths.reject(&:nan?).inject(:+) / strengths.size
+        # Return overall (= average) resource strength, exclude NaN elements.
+        strength.reject(&:nan?).inject(:+) / strength.size
+      end
+    end
+
+    # Calculates resource constrainedness.
+    def resource_constrainedness
+      @resource_constrainedness ||= begin
+        # Collect constrainedness of all resources.
+        constrainedness = @project.resources.collect do |r|
+          # Resource constrainedness is the ratio of average demand to availability.
+          @project.activities.inject(0) { |sum, a| sum + a.resource_usage[r.id] }.to_f / @project.activities.size / r.capacity
+        end
+        # Return overall (= average) resource constrainedness.
+        constrainedness.inject(:+) / constrainedness.size
+      end
+    end
+
+    # Calculates transitive adjacency matrix.
+    def transitive_adjacency_matrix
+      @transitive_adjacency_matrix ||= begin
+        n = @project.activities.size
+        # Initialize boolean adjacency matrix.
+        adjacency = Array.new(n) { Array.new(n) }
+        # Set given adjacencies.
+        @project.activities.each { |a| a.successors.each { |s| adjacency[a.id][s.id] = true } }
+        # Calculate transitive adjacencies using the Triple algorithm.
+        n.times { |k| n.times { |i| n.times { |j| adjacency[i][j] = adjacency[i][j] && !( adjacency[i][k] && adjacency[k][j] ) } } }
+        adjacency
       end
     end
 
