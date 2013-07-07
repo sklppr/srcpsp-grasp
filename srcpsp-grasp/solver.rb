@@ -28,29 +28,22 @@ module SRCPSP_GRASP
   
     # Finds a maximally good solution for the given project.
     def solve(project)
-      
       # Store project.
       @project = project
-
       # Let the project calculate earliest/latest start/finish times.
       @project.calculate_start_and_finish_times!
-
       # Start with an empty solution set.
       @solutions = []
-
       # Generate first batch of solutions with special p_lft and p_random.
       p_lft, p_random = @p_lft, @p_random
       @p_lft, @p_random = 0.95, 0.05
       @solution_set_size.times { @solutions << generate_solution }
       @p_lft, @p_random = p_lft, p_random
-
       # Initialize solution counters, include solution set size in total solution count.
       n_solutions = @solution_set_size
       n_unsuccessful_solutions = 0
-
       # Generate solutions until the limit of either total or unsuccessful solutions is reached.
       until n_unsuccessful_solutions == @max_unsuccessful_solutions || n_solutions == @max_solutions
-
         # Generate a new solution and add it if better than worst in current set.
         # Reset or increment unsuccessful solutions counter accordingly
         if add_solution_if_improvement(generate_solution)
@@ -58,35 +51,26 @@ module SRCPSP_GRASP
         else
           n_unsuccessful_solutions += 1
         end
-
         # Increment total solution counter.
         n_solutions += 1
-
       end
-      
       # Return best solution.
       best_solution
-
     end
   
     # Generate random solution.
     def generate_solution
-  
       # Create new solution and pass project and options.
       solution = Solution.new(@project, @options)
-  
       # Reference and number of iterations to keep the same reference for.
       reference = nil
       iterations = 0
-
       # Repeat for activity count.
       @project.activities.size.times do
-  
         # Determine activities that are not yet part of the solution with all predecessors already in solution.
         eligible_activities = (@project.activities - solution.activities).select do |activity|
           activity.predecessors.all? { |predecessor| solution.include?(predecessor) }
         end
-  
         # Count down the number of iterations.
         if iterations > 0
           iterations -= 1
@@ -96,7 +80,6 @@ module SRCPSP_GRASP
           # Randomly pick a new iteration count.
           iterations = [@min_reference_iterations, @max_reference_iterations].sample
         end
-
         # Select activity according to reference.
         activity = case reference
           # Activity with smallest latest finish time.
@@ -106,15 +89,11 @@ module SRCPSP_GRASP
           # Next best activity according to the reference.
           else reference.activities.find { |a| eligible_activities.include?(a) }
         end
-  
         # Add activity to solution.
         solution << activity
-
       end
-
       # Return solution.
       solution
-  
     end
   
     # Randomly selects a reference, either a Solution or :lft or :random.
@@ -131,10 +110,8 @@ module SRCPSP_GRASP
     # Adds solution to the set if it's better than the currently worst solution.
     # Return wether the solution was added or now.
     def add_solution_if_improvement(solution)
-
       # Sort existing solutions by expected makespan.
       @solutions.sort_by!(&:expected_makespan)
-
       # Add it to the set if it's better than the currently worst solution.
       if solution.expected_makespan < @solutions.last.expected_makespan
         @solutions.delete @solutions.last
@@ -143,18 +120,14 @@ module SRCPSP_GRASP
       else
         false
       end
-
     end
   
     # Returns solution with minimal expected makespan.
     def best_solution
-
       # Sort existing solutions by expected makespan.
       @solutions.sort_by!(&:expected_makespan)
-
       # First solution is the best one.
       @solutions.first
-
     end
   
   end

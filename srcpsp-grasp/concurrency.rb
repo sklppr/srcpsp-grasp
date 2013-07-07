@@ -6,17 +6,14 @@ module SRCPSP_GRASP
 
     # Returns results of executing given block in given number of threads.
     def self.in_threads(n_threads=2, &block)
-
       # Create requested number of threads, execute block, wait and collect result.
       (0...n_threads).collect do |thread_counter|
         Thread.new { Thread.current[:result] = block.call(thread_counter) }.join[:result]
       end
-
     end
 
     # Returns results of executing given block in given number of processes.
     def self.in_processes(n_processes=2, &block)
-
       # Create requested number of subprocesses.
       (0...n_processes).collect do |process_counter|
         # Create two way pipe, fork.
@@ -36,7 +33,6 @@ module SRCPSP_GRASP
         Process.wait(pid)
         Marshal.load(io_read.read)
       end
-
     end
 
   end
