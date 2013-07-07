@@ -18,11 +18,6 @@ module SRCPSP_GRASP
       @activities = []
       @resources = []
     end
-
-    # Shortcut to retrieve project size.
-    def size
-      @activities.size
-    end
     
     # Calculates earliest/latest start/finish times using the Triple algorithm.
     def calculate_start_and_finish_times!
