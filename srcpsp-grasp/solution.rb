@@ -37,23 +37,28 @@ module SRCPSP_GRASP
       solution
     end
 
-    # Returns expected makespan and calculates it first if necessary.
+    # Calculates expected makespan.
     def expected_makespan
-      @expected_makespan || calculate_expected_makespan(@n_replications, @distribution)
+      @expected_makespan ||= estimate_makespan(@n_replications)
     end
 
-    # Calculates expected makespan by generating a schedule from activity list (serial SGS).
-    def calculate_expected_makespan(n_replications, distribution)
+    # Calculates true makespan (within 1%).
+    def true_makespan
+      @true_makespan ||= estimate_makespan(1000)
+    end
+
+    # Estimates makespan by generating given number of schedules from the activity list (serial SGS).
+    def estimate_makespan(replications)
       # Collect makespans for given number of replications.
       makespans = []
-      n_replications.times do
+      replications.times do
         # Draw activity durations from given distribution.
         activity_durations = @activities.collect { |activity| Distribution.send(@distribution, activity.duration) }
         # Calculate makespan for these activity durations.
         makespans << calculate_makespan(activity_durations)
       end
       # Set expected makespan to be the average of collected makespans.
-      @expected_makespan = makespans.inject(:+) / makespans.size
+      makespans.inject(:+) / makespans.size
     end
 
     # Calculates makespan for given activity durations by generating a schedule from activity list (serial SGS).
