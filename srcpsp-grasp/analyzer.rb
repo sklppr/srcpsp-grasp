@@ -20,7 +20,7 @@ module SRCPSP_GRASP
 
     # Calculates network complexity.
     def network_complexity
-      @network_complexity || = begin
+      @network_complexity ||= begin
         # Network complexity is the ratio of adjancies (occurences of true) to network size.
         transitive_adjacency_matrix.flatten.count(true).to_f / @project.activities.size
       end
